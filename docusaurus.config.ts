@@ -97,7 +97,7 @@ const config: Config = {
           items: [
             {
               label: "RPC Tutorial",
-              to: "/docs/intro",
+              to: "/docs",
             },
             {
               label: "Firo Guides",
