@@ -1,0 +1,177 @@
+---
+sidebar_position: 2
+title: Blockchain
+---
+
+# Blockchain
+
+These methods let you read the state of the Firo blockchain — the chain of blocks, individual transactions, and the unspent coin set. They're read-only and work without a wallet.
+
+Use them when you want to:
+
+- Check how far along the chain your node is
+- Look up a block or transaction by its ID
+- Verify that a transaction output hasn't been spent
+- Get an overview of the entire chain's statistics
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Client
+    participant Node
+
+    App->>Client: getBlock(hash)
+    Client->>Node: JSON-RPC getblock
+    Node-->>Client: Block data
+    Client-->>App: Block object
+```
+
+## Chain Overview
+
+### `getBlockchainInfo()`
+
+Returns a summary of the chain your node is on — the network name, block height, sync progress, and active protocol upgrades (soft forks).
+
+```typescript
+const info = await client.getBlockchainInfo();
+
+console.log(info.chain); // "main", "test", or "regtest"
+console.log(info.blocks); // current block height
+console.log(info.verificationprogress); // 0.0–1.0 sync progress
+```
+
+### `getBlockCount()`
+
+Returns the current block height — how many blocks are in the chain.
+
+```typescript
+const height = await client.getBlockCount();
+console.log(`Node is at block ${height}`);
+```
+
+### `getBestBlockHash()`
+
+Returns the hash of the most recent block at the tip of the chain.
+
+```typescript
+const hash = await client.getBestBlockHash();
+```
+
+### `getTxOutSetInfo()`
+
+Returns statistics about all unspent transaction outputs (UTXOs) currently in the chain. Useful for auditing the total coin supply.
+
+```typescript
+const stats = await client.getTxOutSetInfo();
+
+console.log(`Total FIRO in circulation: ${stats.total_amount}`);
+console.log(`Unspent outputs: ${stats.txouts}`);
+console.log(`At block: ${stats.height}`);
+```
+
+## Blocks
+
+### `getBlockHash(height)`
+
+Converts a block height (a number) into its hash (a hex string). You need the hash to fetch the full block.
+
+```typescript
+const hash = await client.getBlockHash(100000);
+```
+
+### `getBlock(hash)`
+
+Fetches a full block including all its transactions.
+
+```typescript
+const block = await client.getBlock(hash);
+
+console.log(`Block #${block.height}`);
+console.log(`Transactions: ${block.tx.length}`);
+console.log(`Mined at: ${new Date(block.time * 1000).toISOString()}`);
+```
+
+### `getBlockHeader(hash)`
+
+Fetches the block header only — no transactions. Much lighter than `getBlock` when you only need metadata like timestamp or difficulty.
+
+```typescript
+const header = await client.getBlockHeader(hash);
+// Pass false as second argument to get the raw hex instead
+const hex = await client.getBlockHeader(hash, false);
+```
+
+## Transactions
+
+### `getRawTransaction(txid)`
+
+Fetches a transaction by its ID. Returns a fully decoded transaction object by default.
+
+> Requires `txindex=1` in `firo.conf` for transactions outside your wallet or the mempool.
+
+```typescript
+const tx = await client.getRawTransaction(txid);
+
+console.log(`Inputs:  ${tx.vin.length}`);
+console.log(`Outputs: ${tx.vout.length}`);
+console.log(`Confirmations: ${tx.confirmations}`);
+
+// Pass false to get raw hex instead
+const hex = await client.getRawTransaction(txid, false);
+```
+
+### `getTxOut(txid, outputIndex)`
+
+Checks whether a specific output of a transaction is still unspent. Returns `null` if the output has already been spent.
+
+```typescript
+const output = await client.getTxOut(txid, 0);
+
+if (output === null) {
+  console.log("Output already spent");
+} else {
+  console.log(`Value: ${output.value} FIRO`);
+}
+```
+
+## Mempool
+
+The mempool is a waiting area for transactions that have been broadcast but not yet included in a block.
+
+### `getMempoolInfo()`
+
+Returns a summary of the mempool: how many transactions are waiting, how much memory they use, and the minimum fee rate required for acceptance.
+
+```typescript
+const info = await client.getMempoolInfo();
+
+console.log(`Waiting transactions: ${info.size}`);
+console.log(`Memory used: ${info.bytes} bytes`);
+console.log(`Min fee rate: ${info.mempoolminfee}`);
+```
+
+### `getRawMempool()`
+
+Returns all transactions currently in the mempool with their details.
+
+```typescript
+const mempool = await client.getRawMempool();
+
+for (const [txid, entry] of Object.entries(mempool)) {
+  console.log(`${txid}: fee ${entry.fee}, size ${entry.size}`);
+}
+
+// Pass false to get just a list of txids
+const txids = await client.getRawMempool(false);
+```
+
+### `getMempoolEntry(txid)`
+
+Fetches details for a single transaction in the mempool by its ID.
+
+```typescript
+const entry = await client.getMempoolEntry(txid);
+
+console.log(`Fee: ${entry.fee}`);
+console.log(`Time in mempool: ${entry.time}`);
+```

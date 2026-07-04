@@ -1,0 +1,73 @@
+---
+sidebar_position: 9
+title: Node & Utility Methods
+---
+
+# Node & Utility Methods
+
+Not every RPC method gets a named, typed wrapper. Some are node-admin actions, side-effecty
+by design, or simply too low-usage to justify a dedicated method — but they're all reachable
+through `call()` and `batch()`.
+
+This is intentional, not incomplete: methods that mutate node/sync state or manage the local
+node itself are left untyped on purpose, so the caller has to be explicit about invoking them.
+A typed wrapper implies a stable, safe-to-call-anytime method — that's not true for something
+like resyncing masternode list state or dropping an InstantSend lock.
+
+## Control
+
+Basic node status and introspection.
+
+```typescript
+const info = await client.call("getinfo");
+const memInfo = await client.call("getmemoryinfo");
+const helpText = await client.call<string>("help");
+const helpForMethod = await client.call<string>("help", "getblockcount");
+```
+
+## Mobile
+
+```typescript
+const txHashes = await client.call<string[]>("getusedcoinstagstxhashes");
+```
+
+## Evo — local-control operations
+
+These affect your node's own sync/lock state rather than reading chain data. Call them
+deliberately, not as part of a routine batch of reads.
+
+```typescript
+// Advances the znode sync state machine by one step
+await client.call("evoznsync", "next");
+
+// Resets znode sync progress entirely — node will need to re-sync znode list/state
+await client.call("evoznsync", "reset");
+
+// Removes a specific InstantSend lock by txid
+await client.call("removeislock", "<txid>");
+```
+
+:::caution
+`evoznsync reset` and `removeislock` mutate local node state. Avoid grouping them into a
+`batch()` call with unrelated reads — batch calls don't guarantee the kind of ordering or
+isolation you'd get from sequential `await`ed calls, so a state-mutating call landing
+mid-batch can make results from other calls in that batch harder to reason about.
+:::
+
+## Batching plain reads
+
+Where these methods _are_ safe to batch is alongside each other as reads:
+
+```typescript
+const [info, memInfo] = await client.batch([
+  { method: "getinfo", params: [] },
+  { method: "getmemoryinfo", params: [] },
+]);
+```
+
+## When to reach for `call()` instead of a typed method
+
+- The method is a node-admin action (sync control, ban management, wallet admin)
+- The method has no stable/typed response shape in this SDK yet
+- You need a method not listed anywhere in these docs — `call<T>('anyrpcmethod', ...params)`
+  reaches every RPC method the node exposes, typed or not
