@@ -14,6 +14,51 @@ node itself are left untyped on purpose, so the caller has to be explicit about 
 A typed wrapper implies a stable, safe-to-call-anytime method — that's not true for something
 like resyncing masternode list state or dropping an InstantSend lock.
 
+## Typed Methods
+
+### `createMultisig(nrequired, keys)`
+
+Creates a P2SH multisig address from a list of public keys. `nrequired` is the number of signatures needed to spend. Returns the address and its redeem script.
+
+```typescript
+const result = await client.createMultisig(2, [pubkey1, pubkey2, pubkey3]);
+
+console.log(`Address:       ${result.address}`);
+console.log(`Redeem script: ${result.redeemScript}`);
+```
+
+> This creates the address but does not add it to your wallet. Use `importAddress(result.address)` if you want your node to track its transactions.
+
+### `signMessageWithPrivKey(privkey, message)`
+
+Signs a message with a raw WIF private key without needing an unlocked wallet. Returns a base64-encoded signature.
+
+```typescript
+const signature = await client.signMessageWithPrivKey(wifKey, 'hello world');
+```
+
+### `verifyMessage(address, signature, message)`
+
+Verifies that a message was signed by the owner of a transparent Firo address. Returns `true` if valid.
+
+```typescript
+const valid = await client.verifyMessage('a1B2c3...', signature, 'hello world');
+```
+
+### `verifyMessageWithSparkAddress(sparkAddress, signature, message)`
+
+Verifies that a message was signed by the owner of a Spark address.
+
+```typescript
+const valid = await client.verifyMessageWithSparkAddress(
+  mySparkAddress,
+  signature,
+  'hello world',
+);
+```
+
+---
+
 ## Control
 
 Basic node status and introspection.

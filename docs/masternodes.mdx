@@ -8,7 +8,6 @@ title: Masternodes & Quorums
 These methods expose Firo's evolution (evo) layer: masternode provider transactions (`protx`) and the LLMQ quorums masternodes form for chainlocks, InstantSend, and other threshold-signed operations.
 
 Use them when you want to:
-
 - List and inspect registered masternodes
 - Track masternode list changes between two blocks
 - Inspect quorum membership and DKG (distributed key generation) status
@@ -43,9 +42,9 @@ Returns detailed information about a single masternode: its collateral, operator
 
 ```typescript
 const info = await client.protxInfo(proTxHashes[0]);
-console.log(info.state.service); // masternode host:port
+console.log(info.state.service);       // masternode host:port
 console.log(info.state.payoutAddress);
-console.log(info.wallet.hasOwnerKey); // does this wallet control it?
+console.log(info.wallet.hasOwnerKey);  // does this wallet control it?
 ```
 
 ### `protxDiff(baseBlock, block)`
@@ -54,9 +53,9 @@ Returns the difference in the masternode list and quorum set between two block h
 
 ```typescript
 const diff = await client.protxDiff(1000, 2000);
-console.log(diff.mnList); // masternodes added/changed
-console.log(diff.deletedMNs); // masternodes removed
-console.log(diff.newQuorums); // quorums formed in this range
+console.log(diff.mnList);        // masternodes added/changed
+console.log(diff.deletedMNs);    // masternodes removed
+console.log(diff.newQuorums);    // quorums formed in this range
 ```
 
 ### `quorumList()`
@@ -76,7 +75,7 @@ Returns details about a specific quorum: its members, the mined block, and the q
 
 ```typescript
 const info = await client.quorumInfo(1, quorumHash);
-console.log(info.members.filter((m) => m.valid).length, "valid members");
+console.log(info.members.filter((m) => m.valid).length, 'valid members');
 console.log(info.quorumPublicKey);
 ```
 
@@ -124,6 +123,101 @@ Checks whether a conflicting signing request has already been signed for the giv
 ```typescript
 const conflicting = await client.quorumIsConflicting(1, requestId, msgHash);
 ```
+
+## Evoznodes
+
+### `evoznodeList()`
+
+Returns the full list of registered evoznodes as a map of `proTxHash → EvozNodeInfo`.
+
+```typescript
+const nodes = await client.evoznodeList();
+for (const [hash, node] of Object.entries(nodes)) {
+  console.log(`${hash}: ${node.status} @ ${node.address}`);
+}
+```
+
+### `evoznodeCount()`
+
+Returns the count of total and enabled evoznodes on the network.
+
+```typescript
+const count = await client.evoznodeCount();
+console.log(`Total: ${count.total}, Enabled: ${count.enabled}`);
+```
+
+### `evoznodeCurrent()`
+
+Returns information about the evoznode that is due to be paid next.
+
+```typescript
+const current = await client.evoznodeCurrent();
+console.log(`Next payee: ${current.payee} at height ${current.height}`);
+```
+
+### `evoznodeWinner()`
+
+Returns information about the evoznode that won the most recent payment.
+
+```typescript
+const winner = await client.evoznodeWinner();
+console.log(`Last winner: ${winner.payee}`);
+```
+
+### `evoznodeWinners()`
+
+Returns a map of upcoming block heights to expected evoznode payee addresses.
+
+```typescript
+const winners = await client.evoznodeWinners();
+for (const [height, payee] of Object.entries(winners)) {
+  console.log(`Block ${height} → ${payee}`);
+}
+```
+
+## BLS Keys
+
+### `blsGenerate()`
+
+Generates a new BLS key pair — a `secret` (private) key and a `public` key. Used when registering or updating a masternode operator key.
+
+```typescript
+const keypair = await client.blsGenerate();
+console.log(`Public:  ${keypair.public}`);
+console.log(`Private: ${keypair.secret}`);
+```
+
+### `blsFromSecret(secret)`
+
+Derives the BLS public key from an existing BLS secret key.
+
+```typescript
+const keypair = await client.blsFromSecret(myBlsSecret);
+console.log(`Derived public key: ${keypair.public}`);
+```
+
+## Network State
+
+### `sporkList()`
+
+Returns the current state of all active network sporks (feature flags controlled by the Firo team).
+
+```typescript
+const sporks = await client.sporkList();
+console.log(sporks);
+```
+
+### `evoznsyncStatus()`
+
+Returns the current evoznode sync status — whether the node has finished syncing the masternode list, quorums, and other evo-layer state.
+
+```typescript
+const status = await client.evoznsyncStatus();
+console.log(`Synced: ${status.IsSynced}`);
+console.log(`Asset: ${status.AssetName}`);
+```
+
+---
 
 ## Example: Auditing a Masternode
 

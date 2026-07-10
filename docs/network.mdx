@@ -8,7 +8,6 @@ title: Network
 These methods give you visibility into your node's connectivity — what version it's running, which peers it's connected to, and whether it's actively relaying transactions.
 
 Use them when you want to:
-
 - Check if your node is online and connected
 - Build a peer health dashboard
 - Monitor your node's version and protocol status
@@ -55,7 +54,7 @@ const peers = await client.getPeerInfo();
 console.log(`Connected peers: ${peers.length}`);
 
 for (const peer of peers) {
-  const direction = peer.inbound ? "inbound" : "outbound";
+  const direction = peer.inbound ? 'inbound' : 'outbound';
   console.log(`${peer.addr} (${direction}) — ping ${peer.pingtime}ms`);
   console.log(`  Synced headers: ${peer.synced_headers}`);
   console.log(`  Synced blocks:  ${peer.synced_blocks}`);
@@ -71,5 +70,5 @@ const [network, peers] = await Promise.all([
 ]);
 
 const healthy = network.networkactive && peers.length > 0;
-console.log(healthy ? "Node is healthy" : "Node may be offline or isolated");
+console.log(healthy ? 'Node is healthy' : 'Node may be offline or isolated');
 ```

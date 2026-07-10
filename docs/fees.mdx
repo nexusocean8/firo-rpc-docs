@@ -8,7 +8,6 @@ title: Fees
 These methods help you figure out how much to pay in transaction fees. Set the fee too low and your transaction may sit unconfirmed for a long time. Set it too high and you waste money.
 
 Use them when you want to:
-
 - Know the current network fee rate before sending
 - Estimate what fee will get your transaction confirmed in N blocks
 - Build fee-selection logic into a wallet or payment tool
@@ -40,7 +39,7 @@ Returns `-1` if there's not enough data to estimate.
 ```typescript
 const rate = await client.estimateFee(6);
 if (rate === -1) {
-  console.log("Not enough data to estimate");
+  console.log('Not enough data to estimate');
 } else {
   console.log(`Fee for ~6 block confirmation: ${rate} FIRO/kB`);
 }

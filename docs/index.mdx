@@ -18,25 +18,28 @@ npm install @nexusocean/firo-rpc
 Before using any methods you need to create a client. The client holds your connection settings and is reused for every call.
 
 ```typescript
-import { createFiroRpcClient } from "@nexusocean/firo-rpc";
+import { createFiroRpcClient } from '@nexusocean/firo-rpc';
 
 const client = createFiroRpcClient({
-  host: "127.0.0.1",
+  host: '127.0.0.1',
   port: 8888,
-  user: "rpcuser",
-  pass: "rpcpass",
-  protocol: "http",
+  user: 'rpcuser',
+  pass: 'rpcpass',
+  protocol: 'http',
 });
 ```
 
-| Option     | Default     | Description                              |
-| ---------- | ----------- | ---------------------------------------- |
-| `host`     | `127.0.0.1` | IP or hostname of your Firo node         |
-| `port`     | `8888`      | RPC port configured in `firo.conf`       |
-| `user`     | —           | RPC username (required)                  |
-| `pass`     | —           | RPC password (required)                  |
-| `protocol` | `http`      | Use `https` if your node has TLS enabled |
-| `timeout`  | —           | Request timeout in milliseconds          |
+| Option      | Default     | Description                              |
+| ----------- | ----------- | ---------------------------------------- |
+| `host`                | `127.0.0.1` | IP or hostname of your Firo node                                    |
+| `port`                | `8888`      | RPC port configured in `firo.conf`                                  |
+| `user`                | —           | RPC username (required)                                             |
+| `pass`                | —           | RPC password (required)                                             |
+| `protocol`            | `http`      | Use `https` if your node has TLS enabled                            |
+| `timeout`             | `30_000`    | Request timeout in milliseconds                                     |
+| `enableTor`           | `false`     | Route requests through a local SOCKS5 proxy on `127.0.0.1:9050`    |
+| `rejectUnauthorized`  | `true`      | Set to `false` to allow self-signed TLS certificates (HTTPS only)  |
+| `axiosOptions`        | —           | Pass-through for any additional Axios request config                |
 
 ## Make Your First Call
 
@@ -51,8 +54,8 @@ Send several requests in one round trip using `client.batch`. This is faster tha
 
 ```typescript
 const results = await client.batch([
-  { method: "getblockcount" },
-  { method: "getnetworkinfo" },
+  { method: 'getblockcount' },
+  { method: 'getnetworkinfo' },
 ]);
 
 const count = results[0].result as number;
@@ -64,17 +67,17 @@ const info = results[1].result;
 If a method isn't listed in the typed API, you can still call it using the generic `client.call` escape hatch:
 
 ```typescript
-const raw = await client.call<string>("getbestblockhash");
+const raw = await client.call<string>('getbestblockhash');
 ```
 
 ## Node Requirements
 
 Some methods require extra flags in your `firo.conf` file:
 
-| Flag             | Needed for                                            |
-| ---------------- | ----------------------------------------------------- |
-| `txindex=1`      | Looking up transactions not in your wallet or mempool |
-| `addressindex=1` | `getAddressBalance`, `getAddressTxIds`                |
-| `mobile=1`       | All Spark privacy methods                             |
+| Flag            | Needed for                                            |
+| --------------- | ----------------------------------------------------- |
+| `txindex=1`     | Looking up transactions not in your wallet or mempool |
+| `addressindex=1`| `getAddressBalance`, `getAddressTxIds`                |
+| `mobile=1`      | All Spark privacy methods                             |
 
 After adding index flags, restart your node with `-reindex` once to build the index from scratch.

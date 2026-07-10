@@ -8,7 +8,6 @@ title: Blockchain
 These methods let you read the state of the Firo blockchain — the chain of blocks, individual transactions, and the unspent coin set. They're read-only and work without a wallet.
 
 Use them when you want to:
-
 - Check how far along the chain your node is
 - Look up a block or transaction by its ID
 - Verify that a transaction output hasn't been spent
@@ -35,8 +34,8 @@ Returns a summary of the chain your node is on — the network name, block heigh
 ```typescript
 const info = await client.getBlockchainInfo();
 
-console.log(info.chain); // "main", "test", or "regtest"
-console.log(info.blocks); // current block height
+console.log(info.chain);               // "main", "test", or "regtest"
+console.log(info.blocks);              // current block height
 console.log(info.verificationprogress); // 0.0–1.0 sync progress
 ```
 
@@ -120,18 +119,21 @@ console.log(`Confirmations: ${tx.confirmations}`);
 const hex = await client.getRawTransaction(txid, false);
 ```
 
-### `getTxOut(txid, outputIndex)`
+### `getTxOut(txid, n, includeMempool?)`
 
-Checks whether a specific output of a transaction is still unspent. Returns `null` if the output has already been spent.
+Checks whether a specific output of a transaction is still unspent. Returns `null` if the output has already been spent. Pass `includeMempool: false` to ignore unconfirmed spends (default: `true`).
 
 ```typescript
 const output = await client.getTxOut(txid, 0);
 
 if (output === null) {
-  console.log("Output already spent");
+  console.log('Output already spent');
 } else {
   console.log(`Value: ${output.value} FIRO`);
 }
+
+// Ignore mempool — only confirmed spends count
+const confirmed = await client.getTxOut(txid, 0, false);
 ```
 
 ## Mempool
@@ -174,4 +176,116 @@ const entry = await client.getMempoolEntry(txid);
 
 console.log(`Fee: ${entry.fee}`);
 console.log(`Time in mempool: ${entry.time}`);
+```
+
+### `getMempoolAncestors(txid, verbose?)`
+
+Returns all unconfirmed ancestor transactions for a given mempool entry — the transactions it depends on. Pass `true` for full entry objects; omit or pass `false` for txid strings only.
+
+```typescript
+const ancestorIds = await client.getMempoolAncestors(txid);
+const ancestorDetails = await client.getMempoolAncestors(txid, true);
+```
+
+### `getMempoolDescendants(txid, verbose?)`
+
+Returns all unconfirmed descendant transactions for a given mempool entry — transactions that depend on it. Same verbose flag as `getMempoolAncestors`.
+
+```typescript
+const descendantIds = await client.getMempoolDescendants(txid);
+const descendantDetails = await client.getMempoolDescendants(txid, true);
+```
+
+### `clearMempool()`
+
+Removes all transactions from the mempool. Returns the list of txids that were cleared.
+
+```typescript
+const cleared = await client.clearMempool();
+console.log(`Cleared ${cleared.length} transactions from mempool`);
+```
+
+## Chain State
+
+### `getDifficulty()`
+
+Returns the current proof-of-work difficulty as a multiple of the minimum difficulty.
+
+```typescript
+const difficulty = await client.getDifficulty();
+console.log(`Current difficulty: ${difficulty}`);
+```
+
+### `getChainTips()`
+
+Returns all known chain tips — the active chain tip plus any stale or invalid fork heads. Useful for detecting chain splits or orphaned blocks.
+
+```typescript
+const tips = await client.getChainTips();
+
+for (const tip of tips) {
+  console.log(`Height ${tip.height}: ${tip.hash} (${tip.status})`);
+}
+// status: "active" | "valid-fork" | "valid-headers" | "headers-only" | "invalid"
+```
+
+### `verifyChain(checklevel?, nblocks?)`
+
+Verifies the integrity of the blockchain database. `checklevel` controls how thorough the check is (0–4, default 3); `nblocks` limits how many blocks back to check (default 6, 0 = all).
+
+```typescript
+const ok = await client.verifyChain();
+console.log(`Chain valid: ${ok}`);
+```
+
+## Proofs
+
+### `getTxOutProof(txids, blockhash?)`
+
+Returns a serialized proof (hex) that the given txids were included in a block. Optionally restrict to a specific block.
+
+```typescript
+const proof = await client.getTxOutProof([txid]);
+```
+
+### `verifyTxOutProof(proof)`
+
+Verifies a `getTxOutProof` proof and returns the txids it covers.
+
+```typescript
+const txids = await client.verifyTxOutProof(proof);
+console.log(`Proof covers: ${txids.join(', ')}`);
+```
+
+## Advanced
+
+### `getSpecialTxes(blockhash, type?, count?, skip?, verbosity?)`
+
+Returns special transactions (e.g. masternode registrations) in a given block. Filter by `type` (`-1` for all), paginate with `count`/`skip`. Pass `verbosity: 2` to get full decoded transaction objects; `0` or `1` returns txid strings.
+
+```typescript
+// All special tx ids in a block
+const txids = await client.getSpecialTxes(blockHash);
+
+// Full decoded objects for type 1 (ProRegTx)
+const txs = await client.getSpecialTxes(blockHash, 1, 10, 0, 2);
+```
+
+### `preciousBlock(blockhash)`
+
+Treats a block as if it were received before others at the same height, influencing which chain tip is preferred. Returns `null` on success.
+
+```typescript
+await client.preciousBlock(blockHash);
+```
+
+### `pruneBlockchain(height)`
+
+Prunes the blockchain up to (but not including) the given block height. Returns the height of the last block kept.
+
+> Only available when the node is running in prune mode.
+
+```typescript
+const prunedTo = await client.pruneBlockchain(500000);
+console.log(`Pruned up to block ${prunedTo}`);
 ```

@@ -8,7 +8,6 @@ title: Spark (Privacy)
 Spark is Firo's built-in privacy protocol. It lets you convert regular (transparent) FIRO into private coins whose sender, receiver, and amount are hidden from outside observers.
 
 This section covers four groups of Spark methods:
-
 - **Anonymity Set** — the pool of private coins used to hide your transactions
 - **Names** — human-readable names that map to Spark addresses
 - **Balances & Addresses** — managing your private funds and addresses
@@ -117,7 +116,7 @@ for (const n of myNames) {
 Looks up the Spark address and registration details for a given name.
 
 ```typescript
-const data = await client.getSparkNameData("alice");
+const data = await client.getSparkNameData('alice');
 console.log(`Address: ${data.address}`);
 console.log(`Valid until block: ${data.validUntil}`);
 ```
@@ -127,7 +126,7 @@ console.log(`Valid until block: ${data.validUntil}`);
 Registers a new Spark name pointing to one of your Spark addresses. Returns the transaction ID of the registration.
 
 ```typescript
-const txid = await client.registerSparkName("alice", mySparkAddress, 2);
+const txid = await client.registerSparkName('alice', mySparkAddress, 2);
 console.log(`Registered! txid: ${txid}`);
 ```
 
@@ -137,7 +136,7 @@ Initiates a transfer of a Spark name from one address to another. The original o
 
 ```typescript
 const requestHash = await client.requestSparkNameTransfer(
-  "alice",
+  'alice',
   newAddress,
   2,
   oldAddress,
@@ -258,7 +257,7 @@ Converts transparent FIRO into private Spark coins for one or more Spark address
 
 ```typescript
 const txids = await client.mintSpark({
-  [mySparkAddress]: { amount: 10, memo: "savings" },
+  [mySparkAddress]: { amount: 10, memo: 'savings' },
 });
 console.log(`Minted in: ${txids}`);
 ```
@@ -283,7 +282,7 @@ console.log(`Sent! txid: ${txid}`);
 ```
 
 :::caution
-`sendSpark` returns a transaction ID as soon as the transaction is built — this does **not** mean it was successfully broadcast. Verify with `getTransaction(txid)` and check that `confirmations > 0` before treating the send as final.
+`sendSpark` returns a transaction ID as soon as the transaction is built — this does **not** mean it was successfully broadcast. Verify with `getTransaction(txid)` and check that `confirmations > 0` and `trusted` before treating the send as final.
 :::
 
 ### `listSparkMints()`
@@ -294,7 +293,7 @@ Lists all Spark mints your wallet knows about, including spent ones.
 const mints = await client.listSparkMints();
 
 for (const mint of mints) {
-  const status = mint.isUsed ? "spent" : "unspent";
+  const status = mint.isUsed ? 'spent' : 'unspent';
   console.log(`${mint.txid}: ${mint.amount} FIRO (${status})`);
 }
 ```
@@ -333,9 +332,7 @@ Returns the Spark address, memo, and amount for each Spark output in a transacti
 ```typescript
 const coins = await client.getSparkCoinAddr(txid);
 for (const coin of coins) {
-  console.log(
-    `Address: ${coin.address}, Amount: ${coin.amount}, Memo: ${coin.memo}`,
-  );
+  console.log(`Address: ${coin.address}, Amount: ${coin.amount}, Memo: ${coin.memo}`);
 }
 ```
 
